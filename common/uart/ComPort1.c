@@ -7,6 +7,7 @@
 //#include  "host_io.h"            
 //#include  "iodef.h"
 #include  "ComPort1.h"
+#include  "ComPort2.h"
 
 
 
@@ -88,7 +89,6 @@ void      __attribute__((section(".usercode"))) Com1TxStart(void)
 */
 
 
-//	Com1TxThisPt=0;
    	Com1RxStatus=TX_SET;
     U1TXREG=Com1RxBuffer[Com1TxThisPt];
 //   	Com1TxThisPt=1;   
@@ -103,8 +103,12 @@ void _ISR _U1TXInterrupt(void)
 {
 
     _U1TXIF=0;
-    
-    if(Com1TxThisPt == Com1TxCnt){
+
+	Com1SerialTime=0;
+ 
+   if(Com1TxThisPt >= Com1TxCnt){
+		Com1TxCnt=0;
+		Com1TxThisPt=0;	
       	Com1RxStatus = STX_CHK;
     }
     else{
@@ -125,14 +129,15 @@ void _ISR _U1RXInterrupt(void)
 {
    	unsigned char   buf1=0;
 
-    _U1RXIF=0;
-    
+    _U1RXIF=0;    
+
    	if(_U1RXDA)    buf1=U1RXREG;
    	if(_U1RXDA)    buf1=U1RXREG;
    	if(_U1RXDA)    buf1=U1RXREG;
    	if(_U1RXDA)    buf1=U1RXREG;
    	if(_U1RXDA)    buf1=U1RXREG;
    	if(_U1RXDA)    buf1=U1RXREG;
+
 
     Com1SerialTime=0;
 
@@ -148,7 +153,7 @@ void _ISR _U1RXInterrupt(void)
         _U1PERR=0;
     }
 
-    if(Com1RxStatus != TX_SET){
+	if(Com1RxStatus != TX_SET){
 		Com1ReceiveData(buf1);
 	}
 	

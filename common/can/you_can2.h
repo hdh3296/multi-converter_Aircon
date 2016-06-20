@@ -1,5 +1,6 @@
 
 #include  "..\header\host_io.h"
+#include  "..\working_ram\workingram.h"
 
 
 #define	CAN2_DATA_PT		4
@@ -72,6 +73,7 @@ extern	unsigned 	int   	Can2_Buf[8];
 
 extern	 unsigned	int     CAN2bit;
 
+
 #define  bCan2Data_Continue		GET_BITFIELD(&CAN2bit).bit0 
 #define  bCan2Crc_Include    	GET_BITFIELD(&CAN2bit).bit1 
 #define  bCan2TxAct    			GET_BITFIELD(&CAN2bit).bit2 
@@ -79,6 +81,7 @@ extern	 unsigned	int     CAN2bit;
 #define  bCan2TxReady    		GET_BITFIELD(&CAN2bit).bit4 
 #define  bCan2RxGood    		GET_BITFIELD(&CAN2bit).bit5 
 #define  bCan2CmdAct    		GET_BITFIELD(&CAN2bit).bit6 
+#define  bCan2TxStart    		GET_BITFIELD(&CAN2bit).bit7 
 
 
 

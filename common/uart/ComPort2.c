@@ -11,7 +11,7 @@
 unsigned char   Com2RxBuffer[MAX_RTX_BUF]={0,0};
 unsigned char   Com2RxStatus=0;
 unsigned char   Com2TxOn=0;
-unsigned char   Com2SerialTime=0x0;
+unsigned int    Com2SerialTime=0x0;
 unsigned char   Com2AckTime=0;
 unsigned char   Com2Chksum=0;
 
@@ -19,9 +19,12 @@ unsigned char   Com2RxCnt=0;
 unsigned char   Com2RxThisPt=0;
 unsigned char   Com2TxCnt=0;
 unsigned char   Com2TxThisPt=0;
+unsigned char   TXEN485Timer=0;
 
 
 
+unsigned char   TestBuffer[MAX_RTX_BUF]={0,0};
+unsigned char   TestCnt=0;
 
 
 void  __attribute__((section(".usercode")))   Com2Init(void)
@@ -89,10 +92,8 @@ void      __attribute__((section(".usercode"))) Com2TxStart(void)
    	Com2RxStatus=TX_SET;
     U2TXREG=Com2RxBuffer[Com2TxThisPt];
    	Com2TxThisPt++;   
- 
+	TXEN485Timer=0;
 }
-
-
 
 
 
@@ -101,14 +102,21 @@ void _ISR _U2TXInterrupt(void)
 
     _U2TXIF=0;
     
-    if(Com2TxThisPt >= Com2TxCnt){
-      	Com2RxStatus = STX_CHK;
+	Com2SerialTime=0;
+
+    if(Com2TxThisPt >=  Com2TxCnt){
+		TXEN485Timer=0;
+		Com2TxCnt=0;
+		Com2TxThisPt=0;	
+//      	Com2RxStatus = STX_CHK;
     }
     else{
       	U2TXREG=Com2RxBuffer[Com2TxThisPt];
       	Com2TxThisPt++;
       	Com2RxStatus = TX_SET;
+		TXEN485Timer=0;
     }
+
 }
 
 
@@ -132,7 +140,6 @@ void _ISR _U2RXInterrupt(void)
    	if(_U2RXDA)    buf1=U2RXREG;
    	if(_U2RXDA)    buf1=U2RXREG;
 
-
     Com2SerialTime=0;
 
     if(_U2OERR){
@@ -147,10 +154,10 @@ void _ISR _U2RXInterrupt(void)
         _U2PERR=0;
     }
 
-	
     if(Com2RxStatus != TX_SET){
 		Com2ReceiveData(buf1);
 	}
+
 }
 
 

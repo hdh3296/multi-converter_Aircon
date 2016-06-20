@@ -25,7 +25,6 @@ unsigned int   __attribute__((section(".usercode"))) Can1RxBufSave(void)
 unsigned int   __attribute__((section(".usercode"))) TxCan2Buf(void)
 {
 	unsigned char i;
-
 	Can1RxBufSave();
 
 
@@ -205,15 +204,20 @@ unsigned int   __attribute__((section(".usercode"))) Com1Rx(unsigned char rdata)
 {
 	unsigned char i;
 
-	Com2RxBuffer[0]=rdata;
-	Com2TxThisPt=0;
-	Com2TxCnt=1;	
-	Com2TxStart();
+	Com2RxBuffer[Com2TxCnt]=rdata;
+//////////////////////////////////////////	Com2TxThisPt=0;
+	Com2TxCnt++;	
+
+//	Com2TxCnt=1;	
+//	Com2TxStart();
 
 	Can1TxBuf[Can1TxCnt]   =rdata;		
 	Can2TxBuf[Can2TxCnt]   =rdata;
 	Can1TxCnt++;		
 	Can2TxCnt++;		
+
+	if(Can1TxCnt > (CAN1_MAX_SAVE_BUF-2))	Can1TxCnt=0;	
+	if(Can2TxCnt > (CAN2_MAX_SAVE_BUF-2))	Can2TxCnt=0;	
 
 	return(0);
 }
@@ -228,16 +232,53 @@ unsigned int   __attribute__((section(".usercode"))) Com2Rx(unsigned char rdata)
 {
 	unsigned char i;
 
-	Com1RxBuffer[0]=rdata;
-	Com1TxThisPt=0;
-	Com1TxCnt=1;	
-	Com1TxStart();
+	Com1RxBuffer[Com1TxCnt]=rdata;
+//	Com1TxThisPt=0;
+	Com1TxCnt++;	
+
+//	Com1TxCnt=1;	
+//	Com1TxStart();
+
+
 
 	Can1TxBuf[Can1TxCnt]   =rdata;		
 	Can2TxBuf[Can2TxCnt]   =rdata;
 	Can1TxCnt++;		
 	Can2TxCnt++;		
 
+	if(Can1TxCnt > (CAN1_MAX_SAVE_BUF-2))	Can1TxCnt=0;	
+	if(Can2TxCnt > (CAN2_MAX_SAVE_BUF-2))	Can2TxCnt=0;	
+
+
 	return(0);
 }
 
+
+
+
+unsigned int   __attribute__((section(".usercode"))) Com1TxRepeater(void)
+{
+	unsigned char i;
+
+	if( (Com1TxCnt > 0) && (Com2SerialTime > 2) && (Com1SerialTime > 2)){
+		Com1TxThisPt=0;
+		Com1TxStart();
+		Com1SerialTime=0;
+	}
+}
+
+
+unsigned int   __attribute__((section(".usercode"))) Com2TxRepeater(void)
+{
+	unsigned char i;
+
+	if( (Com2TxCnt > 0) && (Com2SerialTime > 2) && (Com1SerialTime > 2)){
+//        if((Com2RxBuffer[0] != '0') || (Com2RxBuffer[1] != '0') || (Com2RxBuffer[2] != 'f')){
+//			i=0;
+//		}
+		Com2TxThisPt=0;
+		Com2TxStart();
+		Com2SerialTime=0;
+
+	}
+}

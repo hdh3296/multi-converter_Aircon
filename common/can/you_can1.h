@@ -1,6 +1,7 @@
 
 
 #include  "..\header\host_io.h"
+#include  "..\working_ram\workingram.h"
 
 
 
@@ -82,6 +83,7 @@ extern	 unsigned    int     CAN1bit;
 #define  bCan1TxReady    		GET_BITFIELD(&CAN1bit).bit4 
 #define  bCan1RxGood    		GET_BITFIELD(&CAN1bit).bit5 
 #define  bCan1CmdAct    		GET_BITFIELD(&CAN1bit).bit6 
+#define  bCan1TxStart    		GET_BITFIELD(&CAN1bit).bit7 
 
 
 

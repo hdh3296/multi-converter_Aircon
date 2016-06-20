@@ -19,13 +19,18 @@
 extern	unsigned char   Com2RxBuffer[MAX_RTX_BUF];
 extern	unsigned char   Com2RxStatus;
 extern	unsigned char   Com2TxOn;
-extern	unsigned char   Com2SerialTime;
+extern	unsigned int   Com2SerialTime;
 extern	unsigned char   Com2Chksum;
 
 extern	unsigned char   Com2RxCnt;
 extern	unsigned char   Com2RxThisPt;
 extern	unsigned char   Com2TxCnt;
 extern	unsigned char   Com2TxThisPt;
+extern  unsigned char   TXEN485Timer;
+
+
+extern	unsigned char   TestBuffer[MAX_RTX_BUF];
+extern	unsigned char   TestCnt;
 
 
 extern	void  __attribute__((section(".usercode")))   Com2Init(void);

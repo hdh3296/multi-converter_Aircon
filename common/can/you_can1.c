@@ -321,14 +321,14 @@ unsigned int   __attribute__((section(".usercode"))) Can1RxFilterMaskSet(int mas
     C1CTRLbits.REQOP    = 0x4;
 
 	Can1PollingTimer=0;
-	while(Can1PollingTimer<2);
+	while(Can1PollingTimer<10);
 	Can1PollingTimer=0;
 	
 	Can1RxFilterSet(mask_no,Can1RxSidFilter,Can1RxEidFilter);
 	Can1RxMaskSet(mask_no,Can1RxSidMask,Can1RxEidMask);
 
 	Can1PollingTimer=0;
-	while(Can1PollingTimer<2);
+	while(Can1PollingTimer<10);
 	Can1PollingTimer=0;
 
     C1CTRLbits.REQOP    = 0x0;
@@ -512,11 +512,13 @@ unsigned int __attribute__((section(".usercode")))  Can1TxData(unsigned char pt)
 {
 
 	C1EC=0;
+
     if(!C1TX0CONbits.TXREQ){
 		Can1TxSidSet(0,Can1TxSid);
 		Can1TxEidSet(0,Can1TxEid);
 		Can1TxDataLoad(pt);
 		CAN1SendMessageyou(0,&Can1_Buf[0], Can1TxDlc);
+		bCan1TxStart=0;	
 		return(0);
 	}
 

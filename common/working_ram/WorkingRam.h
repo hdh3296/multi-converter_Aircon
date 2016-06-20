@@ -165,6 +165,7 @@ typedef struct _bit_struct
     unsigned bit5  : 1;
     unsigned bit6  : 1;
     unsigned bit7  : 1;
+    unsigned bit8  : 1;
 }bit_field;
 
 

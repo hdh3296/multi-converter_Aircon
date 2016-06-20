@@ -84,7 +84,8 @@ const unsigned char StatusMessage[50][16]={0};
 
 
 
-unsigned    int		InternetModuleTime=0;
+
+
 unsigned    int		msec10=0;
 unsigned    int		msec100=0;
 unsigned    int  	Crc;  
@@ -101,13 +102,218 @@ unsigned    char    SaveVerify;
 unsigned    char    ThisTargetHostAdr,ThisTargetAirconAdr,ThisBufPt=0; 
 unsigned    char    Can1VirtualHost=0;
 
-
-
-unsigned char YouAirconAckTimer[4];
+unsigned    char    YouAirconAckTimer[4]={0,0,0,0};
 
 
 void    Crc_Calulate(unsigned int crcdata);
 
+
+
+///////////베트남 테스트  //////////
+
+unsigned    int		TestTimer=0;
+
+void  __attribute__((section(".usercode"))) PLC_Call_Test(void)
+{
+	if((TestTimer > 500)){
+		TestTimer=0;
+ 		Com2TxThisPt=0;
+		Com2TxCnt=36;
+		Com2RxBuffer[0]='S';
+		Com2RxBuffer[3]='0';
+		Com2RxBuffer[4]='2';
+		Com2RxBuffer[35]='E';
+		Com2TxStart();
+	}
+}
+
+/////////////////////////////////
+
+
+
+/////////////#define	COM_CRT		1
+
+#ifdef	COM_CRT
+
+#define	PLC_HEADER	0x02
+#define	PLC_TAIL	0x03
+
+///////////////////
+void  __attribute__((section(".usercode"))) PLC_Call(void)
+{
+//				if((Com2RxStatus != TX_SET) && (Com2TxCnt != Com2TxThisPt) && (Com2SerialTime > 100)){
+
+	if((Com2SerialTime > 500)){
+		Com2SerialTime=0;
+ 		Com2TxThisPt=0;
+		Com2TxCnt=4;
+		Com2RxBuffer[0]=PLC_HEADER;
+		Com2RxBuffer[1]='1';
+		Com2RxBuffer[2]='1';
+		Com2RxBuffer[3]=PLC_TAIL;
+		Com2TxStart();
+	}
+}
+
+
+unsigned int   __attribute__((section(".usercode"))) PLCCmdSort(void)
+{
+	if(Can1RxBuf[2]==0x81){  //parking
+		Com2SerialTime=0;
+ 		Com2TxThisPt=0;
+		Com2TxCnt=8;
+
+		Com2RxBuffer[0]=PLC_HEADER;
+		Com2RxBuffer[1]='1';
+		Com2RxBuffer[2]='5';
+		Com2RxBuffer[3]='0';
+		Com2RxBuffer[4]='0';
+		Com2RxBuffer[5]='0';
+		Com2RxBuffer[6]='0';
+		Com2RxBuffer[7]=PLC_TAIL;
+		if(Can1RxBuf[4] == 0x01)	Com2RxBuffer[6]='1';
+	}
+	else if(Can1RxBuf[2]==0x86){   //car call
+		Com2SerialTime=0;
+ 		Com2TxThisPt=0;
+		Com2TxCnt=8;
+
+		Com2RxBuffer[0]=PLC_HEADER;
+		Com2RxBuffer[1]='1';
+		Com2RxBuffer[2]='0';
+		Com2RxBuffer[3]='0';
+		Com2RxBuffer[4]='0';
+		Com2RxBuffer[5]='0';
+		Com2RxBuffer[6]='0';
+		Com2RxBuffer[7]=PLC_TAIL;
+
+		switch(Can1RxBuf[4]){
+			case	0:
+				Com2RxBuffer[6]='1';
+				break;		
+			case	1:
+				Com2RxBuffer[6]='2';
+				break;		
+			case	2:
+				Com2RxBuffer[6]='4';
+				break;		
+			case	3:
+				Com2RxBuffer[6]='8';
+				break;		
+			case	4:
+				Com2RxBuffer[5]='1';
+				break;		
+			case	5:
+				Com2RxBuffer[5]='2';
+				break;		
+			case	6:
+				Com2RxBuffer[5]='4';
+				break;		
+			case	7:
+				Com2RxBuffer[5]='8';
+				break;		
+			case	8:
+				Com2RxBuffer[4]='1';
+				break;		
+			case	9:
+				Com2RxBuffer[4]='2';
+				break;		
+			case	10:
+				Com2RxBuffer[4]='4';
+				break;		
+			case	11:
+				Com2RxBuffer[4]='8';
+				break;		
+			case	12:
+				Com2RxBuffer[3]='1';
+				break;		
+			case	13:
+				Com2RxBuffer[3]='2';
+				break;		
+			case	14:
+				Com2RxBuffer[3]='4';
+				break;		
+			case	15:
+				Com2RxBuffer[3]='8';
+				break;		
+		}
+	}
+
+	else if(Can1RxBuf[2]==0x02){   // flr cmd
+		Com2SerialTime=0;
+ 		Com2TxThisPt=0;
+		Com2TxCnt=8;
+
+		Com2RxBuffer[0]=PLC_HEADER;
+		Com2RxBuffer[1]='1';
+		Com2RxBuffer[2]='2';
+		Com2RxBuffer[3]=0;
+		Com2RxBuffer[4]=0;
+		Com2RxBuffer[5]=0;
+		Com2RxBuffer[6]=0;
+		Com2RxBuffer[7]=PLC_TAIL;
+
+		Can1RxBuf[4]= ~Can1RxBuf[4];
+
+		if(Can1RxBuf[4] & 0x01)	Com2RxBuffer[6] = (Com2RxBuffer[6] | 0x01);	
+		if(Can1RxBuf[4] & 0x02)	Com2RxBuffer[6] = (Com2RxBuffer[6] | 0x02);	
+		if(Can1RxBuf[4] & 0x04)	Com2RxBuffer[6] = (Com2RxBuffer[6] | 0x04);	
+		if(Can1RxBuf[4] & 0x08)	Com2RxBuffer[6] = (Com2RxBuffer[6] | 0x08);	
+
+		if(Can1RxBuf[4] & 0x10)	Com2RxBuffer[5] = (Com2RxBuffer[5] | 0x01);	
+		if(Can1RxBuf[4] & 0x20)	Com2RxBuffer[5] = (Com2RxBuffer[5] | 0x02);	
+		if(Can1RxBuf[4] & 0x40)	Com2RxBuffer[5] = (Com2RxBuffer[5] | 0x04);	
+		if(Can1RxBuf[4] & 0x80)	Com2RxBuffer[5] = (Com2RxBuffer[5] | 0x08);	
+
+
+		Can1RxBuf[5]= ~Can1RxBuf[5];
+
+		if(Can1RxBuf[5] & 0x01)	Com2RxBuffer[4] = (Com2RxBuffer[4] | 0x01);	
+		if(Can1RxBuf[5] & 0x02)	Com2RxBuffer[4] = (Com2RxBuffer[4] | 0x02);	
+		if(Can1RxBuf[5] & 0x04)	Com2RxBuffer[4] = (Com2RxBuffer[4] | 0x04);	
+		if(Can1RxBuf[5] & 0x08)	Com2RxBuffer[4] = (Com2RxBuffer[4] | 0x08);	
+
+		if(Can1RxBuf[5] & 0x10)	Com2RxBuffer[3] = (Com2RxBuffer[3] | 0x01);	
+		if(Can1RxBuf[5] & 0x20)	Com2RxBuffer[3] = (Com2RxBuffer[3] | 0x02);	
+		if(Can1RxBuf[5] & 0x40)	Com2RxBuffer[3] = (Com2RxBuffer[3] | 0x04);	
+		if(Can1RxBuf[5] & 0x80)	Com2RxBuffer[3] = (Com2RxBuffer[3] | 0x08);	
+
+		if(Com2RxBuffer[6] >= 0x0a)	Com2RxBuffer[6]=(Com2RxBuffer[6] + '7');		
+		else						Com2RxBuffer[6]=(Com2RxBuffer[6] + '0');		
+		if(Com2RxBuffer[5] >= 0x0a)	Com2RxBuffer[5]=(Com2RxBuffer[5] + '7');		
+		else						Com2RxBuffer[5]=(Com2RxBuffer[5] + '0');		
+		if(Com2RxBuffer[4] >= 0x0a)	Com2RxBuffer[4]=(Com2RxBuffer[4] + '7');		
+		else						Com2RxBuffer[4]=(Com2RxBuffer[4] + '0');		
+		if(Com2RxBuffer[3] >= 0x0a)	Com2RxBuffer[3]=(Com2RxBuffer[3] + '7');		
+		else						Com2RxBuffer[3]=(Com2RxBuffer[3] + '0');		
+	}
+
+
+	Com2TxStart();
+
+	return(0);
+}
+
+
+unsigned int   __attribute__((section(".usercode"))) PLCAck(unsigned char rdata)
+{
+	if(Com2RxBuffer[0] != 'S'){
+		Com2RxCnt=1;		
+		Com2RxBuffer[0]=rdata;
+	}
+	else if( (rdata == 'E') && (Com2RxCnt >= 35)){
+			Com2RxCnt=0;
+			PLCInData();
+
+			YouAirconAckTimer[0]=0;
+			Com2RxBuffer[0]=0;
+	}
+	else if(Com2RxCnt >= 38){
+			Com2RxCnt=0;		
+	}	
+}
+
+#endif
 
 //////////////////////////////////
 
@@ -176,8 +382,8 @@ unsigned int  __attribute__((section(".usercode"))) ReadInitSetupData(void)
 		bitF_HibProtocolCan1_Buf=FALSE;
 		bitF_HibProtocolCan2_Buf=FALSE;
 		bitF_HibProtocolSet_Buf=FALSE;	
-		bitF_VirtualHostSet_Buf=TRUE; //VirtualHost TRUE 
-		bitF_IamRepeater_Buf=FALSE; //Repeater TRUE ... DIP_SW2 all off(because...RS232,485)
+		bitF_VirtualHostSet_Buf=TRUE;
+		bitF_IamRepeater_Buf=FALSE;
   		bitF_Sid_Eid_Dl_Buf=FALSE; 
 
 
@@ -185,7 +391,7 @@ unsigned int  __attribute__((section(".usercode"))) ReadInitSetupData(void)
 		Set_Byte_Flash_Buf((unsigned int)(cF_Version_A))           	= VERSION;
 
 		Set_Byte_Flash_Buf((unsigned int)(cF_SetMyProductIdValue_A)) = 'A';
-		Set_Byte_Flash_Buf((unsigned int)(cF_SetMyAddr1Value_A))     = 0x01; //모두다받을때 0xfe
+		Set_Byte_Flash_Buf((unsigned int)(cF_SetMyAddr1Value_A))     = 0x00;
 		Set_Byte_Flash_Buf((unsigned int)(cF_SetMyAddr2Value_A))     = 0xfd;
 		Set_Byte_Flash_Buf((unsigned int)(cF_SetMyAddr3Value_A))     = 0xfd;
 		Set_Byte_Flash_Buf((unsigned int)(cF_SetMyAddr4Value_A))     = 0xfd;
@@ -212,7 +418,7 @@ unsigned int  __attribute__((section(".usercode"))) ReadInitSetupData(void)
 		Set_Byte_Flash_Buf((unsigned int)(cF_Can2MyLocalAddrValue_A))    = 0;
 
 
-		Set_Byte_Flash_Buf((unsigned int)(cF_AirconAdd1_A))    			= 0xc0; //에어컨 기본 0xc0
+		Set_Byte_Flash_Buf((unsigned int)(cF_AirconAdd1_A))    			= 0xc0;
 		Set_Byte_Flash_Buf((unsigned int)(cF_AirconAdd2_A))    			= 0xfd;
 		Set_Byte_Flash_Buf((unsigned int)(cF_AirconAdd3_A))    			= 0xfd;
 		Set_Byte_Flash_Buf((unsigned int)(cF_AirconAdd4_A))    			= 0xfd;
@@ -220,10 +426,12 @@ unsigned int  __attribute__((section(".usercode"))) ReadInitSetupData(void)
         flash_write_Data((unsigned int)(cF_Version_A));
 
 
-
+		Set_Integer_Flash_Buf((unsigned int)(iF_Com1Baudrate_A))           	= 26;
+		Set_Integer_Flash_Buf((unsigned int)(iF_Com2Baudrate_A))           	= 26;
 
 		Set_Integer_Flash_Buf((unsigned int)(iF_Com1Baudrate_A))           	= 26;
 		Set_Integer_Flash_Buf((unsigned int)(iF_Com2Baudrate_A))           	= 26;
+
 		Set_Integer_Flash_Buf((unsigned int)(iF_Can1Baudrate_A))           	= 0;
 		Set_Integer_Flash_Buf((unsigned int)(iF_Can2Baudrate_A))           	= 0;
 		Set_Integer_Flash_Buf((unsigned int)(iF_Can1RxSidMask_A))           = 0;
@@ -233,31 +441,12 @@ unsigned int  __attribute__((section(".usercode"))) ReadInitSetupData(void)
 
         flash_write_Data((unsigned int)(iF_Com1Baudrate_A));
 
-/*
-zzz=iF_Com1Baudrate;
-zzz=iF_Com2Baudrate;
-zzz=iF_Can1Baudrate;
-zzz=iF_Can2Baudrate;
-zzz=iF_Can1RxSidMask;
-zzz=iF_Can1RxSidFilter;
-zzz=iF_Can2RxSidMask;
-zzz=iF_Can2RxSidFilter;
-*/
-
-
 		Set_Long_Flash_Buf((unsigned int)(lF_Can1RxEidMask_A))           = 0x0;
 		Set_Long_Flash_Buf((unsigned int)(lF_Can1RxEidFilter_A))		 = 0x0;
 		Set_Long_Flash_Buf((unsigned int)(lF_Can2RxEidMask_A))           = 0x0;
 		Set_Long_Flash_Buf((unsigned int)(lF_Can2RxEidFilter_A))         = 0x0;
 
         flash_write_Data((unsigned int)(lF_Can1RxEidMask_A));
-
-/*
-zzz1=lF_Can1RxEidMask;
-zzz1=lF_Can1RxEidFilter;
-zzz1=lF_Can2RxEidMask;
-zzz1=lF_Can2RxEidFilter;
-*/
 
 	}  
 
@@ -780,9 +969,10 @@ void  __attribute__((section(".usercode"))) ElevDataLoad(unsigned char *buf)
 		*(buf+29)	= sRamDArry[ThisBufPt][mMostLongDst];
 		*(buf+30)	= 0;
 		*(buf+31)	= 32; //top floor
-		
-		*(buf+32)	= 0;	//mpm(unsigned char)mpm;
-		*(buf+33)	= 0;	//mpm(unsigned char)(mpm >> 8);
+
+		*(buf+32)	= (unsigned char)mpm;
+		*(buf+33)	= (unsigned char)(mpm >> 8);
+
 		*(buf+34)	= sRamDArry[ThisBufPt][mUnKnown23];
 		*(buf+35)	= sRamDArry[ThisBufPt][I_X_0];     
 		*(buf+36)	= sRamDArry[ThisBufPt][I_FS0];
@@ -810,7 +1000,6 @@ unsigned int   __attribute__((section(".usercode"))) Can1TxSimulationData(void)
 	ElevDataLoad(Can1TxBuf);
 //	Can1_Hib_Retun=0;
 	bCan1TxAct=1;
-
 }
 
 
@@ -848,9 +1037,13 @@ unsigned int   __attribute__((section(".usercode"))) Can1RxAndCan2TxAirconCmd(vo
 
 
 
+
 unsigned int   __attribute__((section(".usercode"))) Can1AckMyData(unsigned char thisadr)
 {
 	unsigned char i;
+
+	if(YouAirconAckTimer[0] > 100)	return(0);
+
 
 	if(Can1RxBuf[0]==0x24){
 		for(i=0;i<8;i++)	Can2TxBuf[i] = Can1RxBuf[i];
@@ -870,6 +1063,12 @@ unsigned int   __attribute__((section(".usercode"))) Can1AckMyData(unsigned char
 		if(thisadr & 0x20)	Can2TxSid=(Can2TxSid | 0x0400);				
 
 		Can2TxData(0);	
+
+#ifdef	COM_CRT
+		PLCCmdSort();
+#endif
+
+
 	}
 	else if(Can1RxBuf[0] & 0x40){
 		Can1RxAndCan2TxAirconCmd();
@@ -888,6 +1087,7 @@ unsigned int   __attribute__((section(".usercode"))) Can1ReceiveData(void)
 	unsigned char	tmpbuf[10];
 
 	if(bitF_IamRepeater){
+		bCan2TxStart=1;
 		TxCan2Buf();
 	}
 
@@ -907,6 +1107,21 @@ unsigned int   __attribute__((section(".usercode"))) Can1ReceiveData(void)
 				Can1TxThisPt=0;
 			}
 			else{
+
+				if(bitF_HibProtocolCan1){
+					j=(Can1RxCnt + Can1RxDlc);
+					if(j >= 40){
+						bCan1RxAll=1;
+					}
+				}
+				else{
+					j=(Can1RxCnt + Can1RxDlc);
+					if(j >= 88){
+						bCan1RxAll=1;
+					}
+				}
+				
+/*
 				if(Can1RxCnt != hostnm){
 					j=4;
 					hostnm=(j * 8);
@@ -914,8 +1129,11 @@ unsigned int   __attribute__((section(".usercode"))) Can1ReceiveData(void)
 				}	
 				else{
 					j=(Can1RxCnt + Can1RxDlc);
-					if(j >= 88)	bCan1RxAll=1;
+					if(j >= 88){
+						bCan1RxAll=1;
+					}
 				}	
+*/
 			}
 	
 			Can1RxDataLoadTmpbuf(tmpbuf);
@@ -989,12 +1207,13 @@ unsigned int   __attribute__((section(".usercode"))) Can2ReceiveData(void)
 	unsigned char	tmpbuf[10];
 
 	if(bitF_IamRepeater){
+		bCan1TxStart=1;
 		TxCan1Buf();
 	}
 
 	else{
 		j=bitF_VirtualHostSet;
-		if( (Can2RxEid & I_AM_HOST) && (j==FALSE)){                                 //other host write to status .. iam virtual host and converter                  		
+		if( (Can2RxEid & I_AM_HOST) && (bitF_VirtualHostSet)){                                 //other host write to status .. iam virtual host and converter                  		
 			j=Can2GetSrcAddr();
 			if(MySetAddrChk(j)){
 				return(0);
@@ -1014,6 +1233,22 @@ unsigned int   __attribute__((section(".usercode"))) Can2ReceiveData(void)
 			}
 	
 			else{
+
+				if(bitF_HibProtocolCan2){
+					j=(Can2RxCnt + Can2RxDlc);
+					if(j >= 40){
+						bCan2RxAll=1;
+					}
+				}
+				else{
+					j=(Can2RxCnt + Can2RxDlc);
+					if(j >= 88){
+						bCan2RxAll=1;
+					}
+				}
+
+
+/*
 				if(Can2RxCnt != hostnm){
 					j=4;
 					hostnm=(j * 8);
@@ -1021,11 +1256,14 @@ unsigned int   __attribute__((section(".usercode"))) Can2ReceiveData(void)
 				}	
 				else{
 					j=(Can2RxCnt + Can2RxDlc);
-					if(j >= 88)	bCan2RxAll=1;
+					if(j >= 88){
+						bCan2RxAll=1;
+					}
 				}	
+*/
+
 			}
-	
-	
+		
 			Can2RxDataLoadTmpbuf(tmpbuf);
 	
 			for(j=0;j<Can2RxDlc;j++){
@@ -1037,7 +1275,9 @@ unsigned int   __attribute__((section(".usercode"))) Can2ReceiveData(void)
 	
 	
 			if(bCan2RxAll){	
-				YouAirconAckTimer[ThisBufPt]=0;
+				YouAirconAckTimer[0]=0;
+
+//				YouHostAckTimer[ThisBufPt]=0;
 				for(j=0;j<Can2RxCnt;j++)	sRamDArry[ThisBufPt][j]=Can2RxBuf[j];
 			}
 		}
@@ -1045,7 +1285,9 @@ unsigned int   __attribute__((section(".usercode"))) Can2ReceiveData(void)
 		else{
 			if(!Can2GetAirconSrcAddr()){
 				Can2AirConData();
-				YouAirconAckTimer[ThisBufPt]=0;
+
+				YouAirconAckTimer[0]=0;
+//				YouHostAckTimer[ThisBufPt]=0;
 			}
 		}
 	}
@@ -1066,21 +1308,40 @@ unsigned int   __attribute__((section(".usercode"))) Com1ReceiveData(unsigned ch
    	unsigned char   buf;
    	unsigned char   temp;
 
-	Com1RxBuffer[Com1RxCnt]=rdata;
+//	Com1RxBuffer[Com1RxCnt]=rdata;
 	
    	buf=rdata;
+
 
     if(Com1RxStatus != TX_SET){   
 
         Com1RxBuffer[Com1RxCnt]=buf;
 
-        if(Com1RxCnt < (MAX_RTX_BUF-1)){
+        if(Com1RxCnt < (MAX_RTX_BUF-2)){
             Com1RxCnt++;
         }
         else{
             Com1RxCnt=0;
             Com1RxBuffer[Com1RxCnt]=buf;
         }
+
+
+#ifdef	COM_CRT
+		if(Com1RxBuffer[0] != 'S'){
+			Com1RxCnt=1;		
+			Com1RxBuffer[0]=rdata;
+		}
+		else if( (rdata == 'E') && (Com1RxCnt >= 35)){
+			for(buf=0;buf<MAX_RTX_BUF;buf++)		Com2RxBuffer[buf]=Com1RxBuffer[buf];
+			Com2RxCnt=Com1RxCnt;			
+			PLCAck(rdata);
+	
+			Com1RxCnt=0;
+		}
+		else if(Com1RxCnt >= 38){
+				Com1RxCnt=0;		
+		}		
+#else
 
         switch(Com1RxStatus){
         	case    STX_CHK:
@@ -1102,11 +1363,11 @@ unsigned int   __attribute__((section(".usercode"))) Com1ReceiveData(unsigned ch
                     }
                     else{
                         Crc=0xffff;
-                        Com1RxBuffer[0]=Com1RxBuffer[1];
-                        Com1RxBuffer[1]=Com1RxBuffer[2];
-						Com1RxCnt=2;
-                        Crc_Calulate((unsigned int)Com1RxBuffer[0]);
-                        Crc_Calulate((unsigned int)Com1RxBuffer[1]);
+                        Com2RxBuffer[0]=Com2RxBuffer[1];
+                        Com2RxBuffer[1]=Com2RxBuffer[2];
+						Com2RxCnt=2;
+                        Crc_Calulate((unsigned int)Com2RxBuffer[0]);
+                        Crc_Calulate((unsigned int)Com2RxBuffer[1]);
                     }   
                 }                
                 else{
@@ -1134,7 +1395,6 @@ unsigned int   __attribute__((section(".usercode"))) Com1ReceiveData(unsigned ch
         		temp=(unsigned char)Crc;
         		if(buf==temp){
                     Com1RxStatus=RX_GOOD;
-					InternetModuleTime=0;	
         		}
         		else    Com1RxStatus=RX_ERROR;
         		break;
@@ -1150,15 +1410,23 @@ unsigned int   __attribute__((section(".usercode"))) Com1ReceiveData(unsigned ch
         		break;
         }
 
+
 		if(bitF_IamRepeater){
 		    if(Com1RxStatus==RX_GOOD){
+
+///////////////////				Com1Rx(rdata);
 				SetupCmd(Com1RxBuffer,1);
 				Com1RxStatus=STX_CHK;
+
+				Com2TxThisPt=0;
+				Com2TxCnt=0;
+	
 			}
 			else{
 				Com1Rx(rdata);
 			}
 		}
+#endif
     }
 
 	return(0);
@@ -1170,29 +1438,42 @@ unsigned int   __attribute__((section(".usercode"))) Com1ReceiveData(unsigned ch
 //////////////// COM2 /////////////////////////////////////
 
 
+
 unsigned int   __attribute__((section(".usercode"))) Com2ReceiveData(unsigned char rdata)
 {
    	unsigned char   buf;
    	unsigned char   temp;
 
-	Com2RxBuffer[Com2RxCnt]=rdata;
+//	Com2RxBuffer[Com2RxCnt]=rdata;
 
    	buf=rdata;
 
     if(Com2RxStatus != TX_SET){   
 
-        Com2RxBuffer[Com2RxCnt]=buf;
+      
+  		Com2RxBuffer[Com2RxCnt]=buf;
 
         if(Com2RxCnt < (MAX_RTX_BUF-1)){
             Com2RxCnt++;
         }
         else{
-            Com2RxCnt=0;
-            Com2RxBuffer[Com2RxCnt]=buf;
+            Com2RxCnt=1;
+            Com2RxBuffer[0]=buf;
         }
+
+			
+
+#ifdef	COM_CRT
+		PLCAck(buf);
+#else
 
         switch(Com2RxStatus){
         	case    STX_CHK:
+
+if(Com2RxBuffer[0] != cF_SetMyAddr1Value){
+Com2RxCnt = 1;
+}
+
                 if(Com2RxCnt == 1){
                     Com2RxBuffer[0]=buf;				
                     Crc=0xffff;
@@ -1242,7 +1523,8 @@ unsigned int   __attribute__((section(".usercode"))) Com2ReceiveData(unsigned ch
         		Crc=((Crc >> 8 ) & 0x00ff);
         		temp=(unsigned char)Crc;
         		if(buf==temp){
-                    Com2RxStatus=RX_GOOD;
+//repeater                    
+Com2RxStatus=RX_GOOD;
         		}
         		else    Com2RxStatus=RX_ERROR;
         		break;
@@ -1257,17 +1539,20 @@ unsigned int   __attribute__((section(".usercode"))) Com2ReceiveData(unsigned ch
         		Com2RxCnt=0;
         		break;
         }
-
 		if(bitF_IamRepeater){
 		    if(Com2RxStatus==RX_GOOD){
+///				Com2Rx(rdata);
 				SetupCmd(Com2RxBuffer,2);
 				Com2RxStatus=STX_CHK;
+
+				Com1TxThisPt=0;
+				Com1TxCnt=0;	
 			}
 			else{
 				Com2Rx(rdata);
 			}
 		}
-
+#endif
     }
 	return(0);
 }
@@ -1319,6 +1604,7 @@ void  __attribute__((section(".usercode")))  RxCan1AndTxCom1(void)
 	if((Com1RxStatus != TX_SET) && (Com1TxCnt != Com1TxThisPt)){
 		Com1TxStart();
 	}
+
 }
 
 
@@ -1386,6 +1672,15 @@ unsigned int   __attribute__((section(".usercode"))) HostSimulationRxCom(unsigne
 			return(0);
 		}
 
+
+/*
+		if(YouHostAckTimer[ThisBufPt] > 10){
+			if(com_nm==1)	Com1RxStatus=STX_CHK;
+			else			Com2RxStatus=STX_CHK;
+
+			return(0);
+		}
+*/
 
 	    if((*(buf+2) >= 0x20) && (*(buf+2) <= 0x3f) ){				
 	    	if((*(buf+2) >= 0x30) && (*(buf+2) <= 0x3f) ){				
@@ -1488,7 +1783,6 @@ unsigned int   __attribute__((section(".usercode"))) HostSimulationRxCom(unsigne
 		if(com_nm==1)		Com1RxStatus=STX_CHK;	
 		else if(com_nm==2)	Com2RxStatus=STX_CHK;	
 	}
-	
 }
 
 
@@ -1501,6 +1795,7 @@ void __attribute__((section(".usercode"))) CrtComCheck(void)
     if(Com1RxStatus==RX_GOOD){
 		tmp_pt=SetupCmd(Com1RxBuffer,1);
 		if(tmp_pt)	HostSimulationRxCom(Com1RxBuffer,1);
+
     }             
     else if(Com2RxStatus==RX_GOOD){
 		tmp_pt=SetupCmd(Com2RxBuffer,2);
@@ -1566,11 +1861,21 @@ unsigned int   __attribute__((section(".usercode"))) Can1TxCrtData(void)
 	if(Can1VirtualHost & 0x20)	Can1TxSid=(Can1TxSid | 0x0400);				
 
 
-	if(cnt >= 88){
-		Can1DataSeq=0;
-		bCan1TxAct=0;
-//		Can1_Hib_Retun=0;
-		return(0);
+	if(bitF_HibProtocolCan1){
+		if(cnt >= 40){
+			Can1DataSeq=0;
+			bCan1TxAct=0;
+	//		Can1_Hib_Retun=0;
+			return(0);
+		}
+	} 									
+	else{
+		if(cnt >= 88){
+			Can1DataSeq=0;
+			bCan1TxAct=0;
+	//		Can1_Hib_Retun=0;
+			return(0);
+		}
 	} 									
 
 
@@ -1717,7 +2022,6 @@ int   __attribute__((section(".usercode"))) main(void)
 
 	TRIS_RUN_LED=0;		
 	TRIS_TXEN_485=0;
-	TRIS_RG15_IO=0;
 
 	RUN_LED=1;
 	TXEN_485=0;
@@ -1732,7 +2036,6 @@ int   __attribute__((section(".usercode"))) main(void)
 	UART2_TX=1;
 
 
-	RG15_OUT=1;
 
 
 	SimIOInit();
@@ -1750,7 +2053,7 @@ int   __attribute__((section(".usercode"))) main(void)
 	for(i=0;i<(CAN2_MAX_SAVE_BUF-1);i++)	Can2TxBuf[i]=0;
 
 
-	for(j=0;j<100;j++){
+	for(j=0;j<1000;j++){
 		for(i=0;i<6500;i++)	asm("CLRWDT");
 	}
 
@@ -1811,34 +2114,46 @@ int   __attribute__((section(".usercode"))) main(void)
     do{
 
 		if( bitF_IamRepeater){
+
+			if(bCan1TxStart)	Can1TxData(0);
+			if(bCan2TxStart)	Can2TxData(0);
+	
+
 			Can1TxRepeater();
 			Can2TxRepeater();
+
+			Com1TxRepeater();
+			Com2TxRepeater();
 		}
 		else{
 			if(bitF_VirtualHostSet){
-				PortSevenSeGIn();
+//				PortSevenSeGIn();
 //				Simulation();
+//				PLC_Call();
 			}
 	
 	 		Can1TxCrtData();
 	 		Can2TxCrtData();
-	        CrtComCheck();
+			CrtComCheck();
 		}
 
 
-	    if(_U2TRMT){
-			TXEN_485=0;
-	   		Com2RxStatus=STX_CHK;
-		}
+//		PLC_Call_Test();
 
 
-		if(InternetModuleTime > 3000){	//5 minute
-			RG15_OUT=0;
-			if(InternetModuleTime > 3010){
-				RG15_OUT=1;
- 				InternetModuleTime=0;  //5 minute
-			}
+
+//		if(PORTFbits.RF5){  !_U1TRMT
+//		if( (Com2RxStatus == TX_SET) && (TXEN485Timer > 1)){
+
+		if( (Com2RxStatus == TX_SET) && (_U2TRMT)){
+			TXEN_485= 0; 		
+			Com2RxStatus = STX_CHK;
 		}
+
+		if(Com2RxStatus != TX_SET){
+			TXEN_485= 0; 		
+		}
+
 
         asm("CLRWDT");
 
@@ -1860,8 +2175,11 @@ void _ISR _T1Interrupt(void)
 		if(Can1PollingTimer < 250) 	Can1PollingTimer++;
 		if(Can2PollingTimer < 250) 	Can2PollingTimer++;
       	if(Com1SerialTime < 250)	Com1SerialTime++;
-      	if(Com2SerialTime < 250)	Com2SerialTime++;
+      	if(Com2SerialTime < 650)	Com2SerialTime++;
+      	if(TXEN485Timer < 250)		TXEN485Timer++;
 
+if(TestTimer < 1000)	TestTimer++;
+			
 		WaitTime++;
 
 		msec10++;
@@ -1873,9 +2191,6 @@ void _ISR _T1Interrupt(void)
         if(msec100 > 100){
             msec100=0;
 			RUN_LED= !RUN_LED;
-
-			if(InternetModuleTime < 3500) InternetModuleTime++;  //5 minute
-
 
 
 			if(YouAirconAckTimer[0] < 250)	YouAirconAckTimer[0]++;

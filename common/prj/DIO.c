@@ -16,7 +16,9 @@ unsigned	char  	sRamDArry[4][END_SRAM];
 unsigned    int		WaitTime;
 unsigned    char    huntingtime;
 unsigned    char	updn;
+unsigned    int		mpm=0;
 
+const unsigned char DftFlrName[] = {"B7B6B5B4B3B2B10102030405060708091011121314151617181920212223242526272829303132"}; 
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -778,4 +780,371 @@ void    DirectPortIn(void)
 }    
 */
 
+
+
+
+
+#define  sINSPECT 			  0 
+#define  sInvertErr			  1                             
+#define  sI_C_N_FLR           2
+#define  sEMERGENCY           3
+#define  sLOPE_BRK            4
+#define  sReserve1            5
+#define  sSLIP                6
+#define  sULS                 7
+#define  sDLS                 8
+#define  sLULD_NO_OFF         9
+#define  sNEXT_FLOOR          10
+#define  sInPortError         11
+#define  sHDS_RUN_OFF         12
+#define  sCLE_RUN_OFF         13
+#define  sReserve2            14
+/////////////////////////////////////
+#define  sEncoderErr          15
+#define  sEncoderABErr        16 
+#define  sSpeedSetError       17 
+#define  sSpeedPortError      18 
+#define  sNoUseSpeed          19 
+#define  sMinLengthErr        20 
+#define  sEqualFloorError     21 
+#define  sSystemErr           22
+#define  sBreakMgtOpen        23  
+#define  sBreakOpen           24  
+#define  sSusErr              25  
+#define  sSdsErr              26  
+//////////////////////////////////
+#define  sLuOrLdErr0          27  
+#define  sLuOrLdErr1          28  
+#define  sLuOrLdErr2          29  
+#define  sLuOrLdErr3          30  
+#define  sLuOrLdErr4          31  
+#define  sLuOrLdErr5          32  
+#define  sCarDoor_Jumper      33
+#define  sHoleDoor_Jumper     34
+#define  sCarHoleDoor_Jumper  35
+
+/////////////////////////////////////
+#define  sFhmError            43
+//////////////////////////////////////
+#define  sHDS_NO_ON           44
+#define  sCLE_NO_ON           45
+#define  sOVL                 46 
+#define  sPARKING             47   
+#define  sFireOn              48         
+#define  sWaterSense          49         
+#define  sOPE_NO_ON           50                                                                            
+#define  sVIP                 51
+#define  sFHM_MODE			  52
+#define  sMANUAL_UP           53         
+#define  sMANUAL_DN           54         
+#define  sMANUAL              55         
+#define  sSFT                 56
+#define  sOPEN                57
+#define  sCLOSE               58         
+#define  sUP                  59         
+#define  sDN                  60         
+#define  sSLOW_SPEED          61         
+#define  sWAIT_LULD           62         
+#define  sSTOP                63        
+#define  sHOME                64         
+#define  sREADY               65
+
+
+unsigned int   __attribute__((section(".usercode"))) PLCInData(void)
+{
+    unsigned int bitflr;
+
+    unsigned char dsp1,dsp2;
+    unsigned char in0,in1,x;
+
+	x=0;
+
+	if(Com2RxBuffer[3] >= 'A')	dsp1=(Com2RxBuffer[3] - '7');
+	else						dsp1=(Com2RxBuffer[3] - '0');
+	dsp1=(dsp1 << 4);
+
+	if(Com2RxBuffer[4] >= 'A')	dsp2=(Com2RxBuffer[4] - '7');
+	else						dsp2=(Com2RxBuffer[4] - '0');
+	 
+	dsp1=(dsp1 | dsp2);
+
+	sRamDArry[x][S0_FLOOR]=dsp1;
+
+
+	dsp1--;
+	dsp1=(dsp1 *2);
+	sRamDArry[x][DSP1]=DftFlrName[dsp1 + 14];
+	sRamDArry[x][DSP2]=DftFlrName[dsp1 + 1 + 14];
+//567890
+
+	mpm= (Com2RxBuffer[11] - '0') * 100;
+	mpm=((Com2RxBuffer[12] - '0') * 10) + mpm;
+	mpm= (Com2RxBuffer[13] - '0') + mpm;
+	mpm= (mpm * 10);
+
+
+	sRamDArry[x][S1_STATE]=(sRamDArry[x][S1_STATE] & ~S1_UP);
+	sRamDArry[x][S2_STATE]=(sRamDArry[x][S2_STATE] & ~S2_DN);
+	sRamDArry[x][S3_STATE]=(sRamDArry[x][S3_STATE] & ~S3_STOP);
+
+
+//	sRamDArry[x][S2_STATE]=(sRamDArry[x][S2_STATE] | S2_CAR_MOVE);
+
+	if( (Com2RxBuffer[14]== '3') ||  (Com2RxBuffer[14]== '4')){
+		sRamDArry[x][S2_STATE]=(sRamDArry[x][S2_STATE] | S2_CAR_MOVE);
+	}
+	else{
+		sRamDArry[x][S2_STATE]=(sRamDArry[x][S2_STATE] & ~S2_CAR_MOVE);
+	}	
+
+
+/*
+	if(Com2RxBuffer[14]== '0'){
+		sRamDArry[x][S3_STATE]=(sRamDArry[x][S3_STATE] | S3_STOP);		
+		sRamDArry[x][S2_STATE]=(sRamDArry[x][S2_STATE] & ~S2_CAR_MOVE);
+	}
+*/
+
+	if(Com2RxBuffer[14]== '1')		sRamDArry[x][S1_STATE]=(sRamDArry[x][S1_STATE] | S1_UP);		
+	if(Com2RxBuffer[14]== '2')		sRamDArry[x][S2_STATE]=(sRamDArry[x][S2_STATE] | S2_DN);		
+//	if(Com2RxBuffer[14]== '3')		sRamDArry[x][S1_STATE]=(sRamDArry[x][S1_STATE] | S1_UP);		
+//	if(Com2RxBuffer[14]== '4')		sRamDArry[x][S2_STATE]=(sRamDArry[x][S2_STATE] | S2_DN);		
+
+
+
+	sRamDArry[x][S1_STATE]=(sRamDArry[x][S1_STATE] & ~S1_OPEN);
+	sRamDArry[x][S1_STATE]=(sRamDArry[x][S1_STATE] & ~S1_CLOSE);
+	if(Com2RxBuffer[15]== '0')		sRamDArry[x][S1_STATE]=(sRamDArry[x][S1_STATE] | S1_OPEN);		
+	if(Com2RxBuffer[15]== '2')		sRamDArry[x][S1_STATE]=(sRamDArry[x][S1_STATE] | S1_OPEN);		
+	if(Com2RxBuffer[15]== '1')		sRamDArry[x][S1_STATE]=(sRamDArry[x][S1_STATE] | S1_CLOSE);		
+
+
+	sRamDArry[x][S1_STATE]=(sRamDArry[x][S1_STATE] & ~S1_AUTO);
+	sRamDArry[x][S1_STATE]=(sRamDArry[x][S1_STATE] & ~S1_BAT);
+	sRamDArry[x][S1_STATE]=(sRamDArry[x][S1_STATE] & ~S1_EMG);
+
+	sRamDArry[x][S2_STATE]=(sRamDArry[x][S2_STATE] & ~S2_FIRE);
+	sRamDArry[x][S3_STATE]=(sRamDArry[x][S3_STATE] & ~S3_VIP);
+
+	if(Com2RxBuffer[16]== '9')			sRamDArry[x][S1_STATE]=(sRamDArry[x][S1_STATE] | S1_EMG);
+	else if(Com2RxBuffer[16]== '5'){
+		sRamDArry[x][S1_STATE]=(sRamDArry[x][S1_STATE] | S1_BAT);
+		sRamDArry[x][S1_STATE]=(sRamDArry[x][S1_STATE] | S1_AUTO);
+	}
+	else if(Com2RxBuffer[16]== '0')		sRamDArry[x][S1_STATE]=(sRamDArry[x][S1_STATE] | S1_AUTO);		
+	else if(Com2RxBuffer[16]== '1')		sRamDArry[x][S1_STATE]=(sRamDArry[x][S1_STATE] | S1_AUTO);		
+	else if(Com2RxBuffer[16]== '2')		sRamDArry[x][S1_STATE]=(sRamDArry[x][S1_STATE] | S1_AUTO);		
+	else if(Com2RxBuffer[16]== '3')		sRamDArry[x][S3_STATE]=(sRamDArry[x][S3_STATE] | S3_VIP);		
+	else if(Com2RxBuffer[16]== '4')		sRamDArry[x][S1_STATE]=(sRamDArry[x][S1_STATE] & ~S1_AUTO);		
+	else if(Com2RxBuffer[16]== '6')		sRamDArry[x][S2_STATE]=(sRamDArry[x][S2_STATE] | S2_FIRE);
+	else if(Com2RxBuffer[16]== '7')		sRamDArry[x][S1_STATE]=(sRamDArry[x][S1_STATE] | S1_AUTO);
+	else if(Com2RxBuffer[16]== '8')		sRamDArry[x][S1_STATE]=(sRamDArry[x][S1_STATE] | S1_AUTO);
+
+
+	sRamDArry[x][S3_STATE]=(sRamDArry[x][S3_STATE] & ~S3_PARKING);
+	if(Com2RxBuffer[36]=='1')	sRamDArry[x][S3_STATE]=(sRamDArry[x][S3_STATE] | S3_PARKING);;
+
+
+
+	if(sRamDArry[x][S1_STATE] & S1_EMG){
+		sRamDArry[x][mSysStatus]=sEMERGENCY;
+	}
+	else if(sRamDArry[x][S3_STATE] & S3_VIP){
+		sRamDArry[x][mSysStatus]=sVIP;
+	}
+	else if(sRamDArry[x][S2_STATE] & S2_FIRE){
+		sRamDArry[x][mSysStatus]=sFireOn;
+	}
+	else if(sRamDArry[x][S3_STATE] & S3_PARKING){
+		sRamDArry[x][mSysStatus]=sPARKING;
+	}
+	else if( !(sRamDArry[x][S1_STATE] & S1_AUTO)){
+		if(sRamDArry[x][S3_STATE] & S3_STOP){
+			sRamDArry[x][mSysStatus]=sMANUAL;
+		}
+		else if(sRamDArry[x][S1_STATE] & S1_UP){
+			sRamDArry[x][mSysStatus]=sMANUAL_UP;
+		}
+		else if(sRamDArry[x][S2_STATE] & S2_DN){
+			sRamDArry[x][mSysStatus]=sMANUAL_DN;
+		} 
+	}
+	else{
+		if(sRamDArry[x][S1_STATE] & S1_UP){
+			sRamDArry[x][mSysStatus]=sUP;
+		}
+		else if(sRamDArry[x][S2_STATE] & S2_DN){
+			sRamDArry[x][mSysStatus]=sDN;
+		}
+
+ 
+//		else if(sRamDArry[x][S3_STATE] & S3_STOP){
+		else if( !(sRamDArry[x][S2_STATE] & S2_CAR_MOVE)){
+			if(sRamDArry[x][S1_STATE] & S1_CLOSE){
+				sRamDArry[x][mSysStatus]=sREADY;
+			}
+			else if(sRamDArry[x][S1_STATE] & S1_OPEN){
+				sRamDArry[x][mSysStatus]=sOPEN;
+			}
+		}
+
+	}
+
+
+//17,18
+	
+
+	if(Com2RxBuffer[22] >= 'A')		dsp1= Com2RxBuffer[22] - '7';
+	else							dsp1= Com2RxBuffer[22] - '0';
+	sRamDArry[x][mCarKey1]=dsp1;
+
+	if(Com2RxBuffer[21] >= 'A')		dsp1= Com2RxBuffer[21] - '7';
+	else							dsp1= Com2RxBuffer[21] - '0';
+	dsp1=(dsp1 << 4);
+	sRamDArry[x][mCarKey1]=(sRamDArry[x][mCarKey1] | dsp1);
+
+
+	if(Com2RxBuffer[20] >= 'A')		dsp1= Com2RxBuffer[20] - '7';
+	else							dsp1= Com2RxBuffer[20] - '0';
+	sRamDArry[x][mCarKey9]=dsp1;
+
+	if(Com2RxBuffer[19] >= 'A')		dsp1= Com2RxBuffer[19] - '7';
+	else							dsp1= Com2RxBuffer[19] - '0';
+	dsp1=(dsp1 << 4);
+	sRamDArry[x][mCarKey9]=(sRamDArry[x][mCarKey9] | dsp1);
+
+
+
+	if(Com2RxBuffer[26] >= 'A')		dsp1= Com2RxBuffer[26] - '7';
+	else							dsp1= Com2RxBuffer[26] - '0';
+	sRamDArry[x][FLR_ON_OFF0]=dsp1;
+
+	if(Com2RxBuffer[25] >= 'A')		dsp1= Com2RxBuffer[25] - '7';
+	else							dsp1= Com2RxBuffer[25] - '0';
+	dsp1=(dsp1 << 4);
+	sRamDArry[x][FLR_ON_OFF0]=(sRamDArry[x][FLR_ON_OFF0] | dsp1);
+
+	if(Com2RxBuffer[24] >= 'A')		dsp1= Com2RxBuffer[24] - '7';
+	else							dsp1= Com2RxBuffer[24] - '0';
+	sRamDArry[x][FLR_ON_OFF1]=dsp1;
+
+	if(Com2RxBuffer[23] >= 'A')		dsp1= Com2RxBuffer[23] - '7';
+	else							dsp1= Com2RxBuffer[23] - '0';
+	dsp1=(dsp1 << 4);
+	sRamDArry[x][FLR_ON_OFF1]=(sRamDArry[x][FLR_ON_OFF1] | dsp1);
+
+
+//27,28,29,30
+
+
+
+//error status 
+	dsp1=Com2RxBuffer[17];
+	dsp2=Com2RxBuffer[18];
+	if(Com2RxBuffer[17] >= 'A')	dsp1=(Com2RxBuffer[17] - '7');
+	else						dsp1=(Com2RxBuffer[17] - '0');
+	dsp1=(dsp1 << 4);
+
+	if(Com2RxBuffer[18] >= 'A')	dsp2=(Com2RxBuffer[18] - '7');
+	else						dsp2=(Com2RxBuffer[18] - '0');
+	 
+	dsp1=(dsp1 | dsp2);
+
+	if((dsp1 > 0) && (dsp1 < 33)){
+		if((dsp1 < 17) || (dsp1 > 27)){
+			sRamDArry[x][mSysStatus]=dsp1;
+		}
+	}
+
+/*
+	switch(dsp1){
+		case	1:	
+			sRamDArry[x][mSysStatus]=sEMERGENCY;
+			break;
+		case	2:	
+			sRamDArry[x][mSysStatus]=sHDS_RUN_OFF;
+			break;
+		case	3:	
+			sRamDArry[x][mSysStatus]=sCLE_RUN_OFF;
+			break;
+		case	4:	
+			sRamDArry[x][mSysStatus]=sOPE_NO_ON;
+			break;
+		case	5:	
+			sRamDArry[x][mSysStatus]=sCLE_NO_ON;
+			break;
+		case	6:	
+			sRamDArry[x][mSysStatus]=sCarDoor_Jumper;
+			break;
+		case	7:	
+			sRamDArry[x][mSysStatus]=sLOPE_BRK;
+			break;
+		case	8:	
+			sRamDArry[x][mSysStatus]=sInvertErr;
+			break;
+		case	9:
+			sRamDArry[x][mSysStatus]=sLuOrLdErr4;  // lu no on	
+			break;
+		case	10:	
+			sRamDArry[x][mSysStatus]=sLuOrLdErr2;  // ld no on	
+			break;
+		case	11:	
+			sRamDArry[x][mSysStatus]=sSusErr;
+			break;
+		case	12:	
+			sRamDArry[x][mSysStatus]=sSdsErr;
+			break;
+		case	13:	
+			sRamDArry[x][mSysStatus]=sULS;
+			break;
+		case	14:	
+			sRamDArry[x][mSysStatus]=sDLS;
+			break;
+		case	15:	
+			sRamDArry[x][mSysStatus]=sBreakOpen;
+			break;
+		case	16:	
+			sRamDArry[x][mSysStatus]=sNEXT_FLOOR;
+			break;
+		case	17:	
+			break;
+		case	18:	
+			break;
+		case	19:	
+			break;
+		case	20:	
+			break;
+		case	21:	
+			break;
+		case	22:	
+			break;
+		case	23:	
+			break;
+		case	24:	
+			break;
+		case	25:	
+			break;
+		case	26:	
+			break;
+		case	27:	
+			break;
+		case	28:	
+			sRamDArry[x][mSysStatus]=sINSPECT;  //??
+			break;
+		case	29:	
+			sRamDArry[x][mSysStatus]=sINSPECT;  //??
+			break;
+		case	30:	
+			sRamDArry[x][mSysStatus]=sSFT;
+			break;
+		case	31:	
+			sRamDArry[x][mSysStatus]=sOPE_NO_ON;
+			break;
+		case	32:	
+			sRamDArry[x][mSysStatus]=sCLE_NO_ON;
+			break;
+	}
+*/
+	return(0);	
+}    
 
