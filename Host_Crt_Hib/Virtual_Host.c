@@ -391,7 +391,7 @@ unsigned int  __attribute__((section(".usercode"))) ReadInitSetupData(void)
 		Set_Byte_Flash_Buf((unsigned int)(cF_Version_A))           	= VERSION;
 
 		Set_Byte_Flash_Buf((unsigned int)(cF_SetMyProductIdValue_A)) = 'A';
-		Set_Byte_Flash_Buf((unsigned int)(cF_SetMyAddr1Value_A))     = 0x00;
+		Set_Byte_Flash_Buf((unsigned int)(cF_SetMyAddr1Value_A))     = 10; // 에어컨 아이디 설정 
 		Set_Byte_Flash_Buf((unsigned int)(cF_SetMyAddr2Value_A))     = 0xfd;
 		Set_Byte_Flash_Buf((unsigned int)(cF_SetMyAddr3Value_A))     = 0xfd;
 		Set_Byte_Flash_Buf((unsigned int)(cF_SetMyAddr4Value_A))     = 0xfd;

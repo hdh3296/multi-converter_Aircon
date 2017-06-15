@@ -1,0 +1,3 @@
+virtual_Host.c
+
+Set_Byte_Flash_Buf((unsigned int)(cF_SetMyAddr1Value_A))     = 0x00; // 이 값이 아이디이다. 
